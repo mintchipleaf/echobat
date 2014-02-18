@@ -14,7 +14,10 @@ var manifest = {
 		}
 };
 
+
 var game = new Splat.Game(canvas, manifest);
+
+const GravSpeed = 0.5;	//Constant for gravity
 
 var player;
 var bgX = 0;
@@ -22,6 +25,9 @@ var bgH = 0;
 var waitingToStart = true;
 var dead = false;
 var button = false;
+var gravity = true;
+var jumping = false;
+var falling = false;
 
 function anythingWasPressed() {
 	return game.keyboard.isPressed("left") || game.keyboard.isPressed("right") || game.mouse.buttons[0];
@@ -33,22 +39,23 @@ game.scenes.add("title", new Splat.Scene(canvas, function() {
 	player = new Splat.AnimatedEntity(50, canvas.height / 2, 40, 130, playerImg, -30, -13);
 },
 function(elapsedMillis){
-	if (!dead){
-	player.x = this.camera.x + 150;
-	}
 	//waiting for input
 	if (waitingToStart) {
-		this.camera.vx = 0.6;
+		this.camera.vx = 1;
 		player.y = 400;
 		player.vx = this.camera.vx;
 		if (anythingWasPressed()) {
 			//game.sounds.play("music", true);
 			waitingToStart = false;
-			this.camera.vx = 0.6;
+			this.camera.vx = 1;
 
 		}}
 
 	player.move(elapsedMillis);
+
+	if (!dead){
+		player.x = this.camera.x + 150;
+	}
 	
 	bgX -= this.camera.vx / 1.5 * elapsedMillis;
 	var bgW = game.images.get("bg").width;
@@ -57,11 +64,11 @@ function(elapsedMillis){
 	}
 	
 	//gravity
-	if (!waitingToStart) {
+	/*if (!waitingToStart && gravity) {
 		player.vy += elapsedMillis * 0.003;
-	}
-	if (!waitingToStart) {
-		player.vy = 0.25;
+	}*/
+	if (!waitingToStart && gravity) {
+		player.vy = GravSpeed;
 	}
 	
 	//input
@@ -74,17 +81,53 @@ function(elapsedMillis){
 		//game.scenes.switchTo("title");
 	//}
 	
-	//jump
+	//flap
+	var jump = 0;
 	if(button && !dead && !waitingToStart){
 		button = false;
+		gravity = false;
+		jumping = true;
+		falling = false;
 		this.startTimer("jump up");
-		player.vy = -10;
+		player.vy = -.5;		
 	}
+	
+	//timer for upwards flap
 	var jumptime = this.timer("jump up");
-	if (jumptime > 200) {
-		this.stopTimer("jump up");
-			jumptime = 0;
+
+	//if upwards flap, go fast then slow down
+	if(jumping){
+		//player.vy = 0- ((jumptime ) * .007);
+		player.vy = -.5;
 	}
+	
+	//if flap done
+	if (jumptime > 400) {
+		this.stopTimer("jump up");
+			jumptime = 0;			//reset timer	
+			jumping = false;		//not jumping
+			gravity = true;			//turn gravity on again
+		this.startTimer("fall down");	//start time for downwards fall
+			falling = true;			//falling	
+	} //else if (jumptime > 100) { jumping = false;}
+	
+	//timer for downwards fall
+	/*var falltime = 500 - this.timer("fall down");
+
+	//if downwards fall, 
+	if (falling) {
+		player.vy = ((falltime / 400));
+	}
+	
+	//if fall done
+	if (falltime < 200) {
+		this.stopTimer("fall down"); //reset timer
+		falltime = 0;
+		gravity = true;
+		falling = false;
+		
+	
+	}*/
 	
 	//falling death
 	var bgH = game.images.get("bg").height;
@@ -96,8 +139,11 @@ function(elapsedMillis){
 	
 	//ceiling
 	if (player.y <= 0) {
-			alert("whomp2");
 		player.y = 0;
+		jumping = false;
+		falling = true;
+		this.startTimer("fall down");	//start time for downwards fall
+
 	}
 	
 },
