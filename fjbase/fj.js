@@ -58,7 +58,9 @@ function(elapsedMillis){
 
 	//set player x pos to left camera side
 	if (!dead){
-		player.x = this.camera.x + 150;
+		//player.x = this.camera.x + 150;
+		//player.vx = 1;
+		console.log(player.x);
 	}
 	
 	bgX -= this.camera.vx / 1.5 * elapsedMillis;
@@ -90,11 +92,11 @@ function(elapsedMillis){
 		//bounce: player.vy = 0- ((newjump ) * .007);
 		//weird fast jump: player.vy = 0- ((200 - jumptime ) * .007);
 		//regular jump:
-		player.vy = -.5;
+		player.vy = -.8;
 	}
 	
 	//if flap done
-	if (jumptime > 200) {
+	if (jumptime > 150){
 		this.stopTimer("jump up");
 			jumptime = 0;			//reset timer	
 			jumping = false;		//not jumping
@@ -113,7 +115,7 @@ function(elapsedMillis){
 	if (player.y >= bgH - 90) {
 		dead = true;
 		player.vy = 0;
-		player.vx = 0 - this.camera.vx + .8;
+		player.vx = 0 ;//- this.camera.vx + .8;
 	}
 	
 	//ceiling
