@@ -95,6 +95,7 @@ function(elapsedMillis){
 			player.y = 400;
 			player.vx = this.camera.vx;
 			this.startTimer("fall down");	//start time for downwards fall
+			this.startTimer("obstacles");
 			falling = true;
 		}}
 
@@ -105,9 +106,9 @@ function(elapsedMillis){
 	player.move(elapsedMillis);
 
 	//set player x pos to left camera side
-	if (!dead){
-	//	player.x = this.camera.x + 150;
-	}
+	/*if (!dead){
+		player.x = this.camera.x + 150;
+	}*/
 	
 	bgX -= this.camera.vx / 1.5 * elapsedMillis;
 	//var bgW = game.images.get("bg").width;
@@ -161,7 +162,7 @@ function(elapsedMillis){
 	if (player.y >= bgH - 90){
 		dead = true;
 		player.vy = 0;
-		player.vx = 0 - this.camera.vx + .8;
+		player.vx = 0; //- this.camera.vx + .8;
 	}
 	
 	//ceiling
@@ -171,6 +172,18 @@ function(elapsedMillis){
 		falling = true;
 		this.startTimer("fall down");	//start time for downwards fall
 	}
+	
+	//
+	var obstacletime = this.timer("obstacles");
+	//if (obstacletime > 500){
+		img = game.images.get("obstacle");
+		obstacle = new Splat.AnimatedEntity(canvas.width , 0, img.width, img.height, img, 0, 0);
+		obstacles.push(obstacle);
+		//while (obstacles.length > 0 && obstacles[0].y > this.camera.y + this.camera.height) {
+		//	obstacles.shift();
+		//}
+		this.startTimer("obstacles");
+	//}
 	
 	//scoring
 	for (var i = 0; i < obstacles.length; i++) {
@@ -183,6 +196,7 @@ function(elapsedMillis){
 				//newBest = true;
 			}
 			obstacle.counted = true;
+			console.log(score);
 		}
 		if (player.collides(obstacle)) {
 			/*if (!this.timer("flash")) {
@@ -202,6 +216,10 @@ function(elapsedMillis){
 				}
 			}
 			this.startTimer("flash");*/
+			falling = true;
+			this.startTimer("fall time");
+			this.camera.vx = 0;
+			player.vy = 1;
 			dead = true;
 			return;
 		}
