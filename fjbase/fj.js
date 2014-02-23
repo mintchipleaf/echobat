@@ -173,17 +173,18 @@ function(elapsedMillis){
 		this.startTimer("fall down");	//start time for downwards fall
 	}
 	
-	//
-	var obstacletime = this.timer("obstacles");
-	//if (obstacletime > 500){
+/********************
+ ********************
+ ********************
+ ********************/
 		img = game.images.get("obstacle");
 		obstacle = new Splat.AnimatedEntity(canvas.width , 0, img.width, img.height, img, 0, 0);
 		obstacles.push(obstacle);
+		
 		//while (obstacles.length > 0 && obstacles[0].y > this.camera.y + this.camera.height) {
 		//	obstacles.shift();
 		//}
-		this.startTimer("obstacles");
-	//}
+
 	
 	//scoring
 	for (var i = 0; i < obstacles.length; i++) {
