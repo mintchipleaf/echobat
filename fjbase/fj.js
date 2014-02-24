@@ -1,22 +1,3 @@
-/*		if (Math.random() > 0.5) {
-			img = game.animations.get(onRight ? "laser-right" : "laser-left");
-			if (onRight) {
-				obstacle = new Splat.AnimatedEntity(canvas.width - wallImg.width - img.width + 8 + 4, y + 10, 8, 211, img, -4, -10);
-			} else {
-				obstacle = new Splat.AnimatedEntity(x + 29, y + 10, 8, 211, img, -29, -10);\
-			}
-		} else {
-			img = game.images.get("spikes");
-			obstacle = new Splat.AnimatedEntity(x, y, img.width, img.height, img, 0, 0);
-			if (onRight) {
-				obstacle.draw = drawFlipped;
-				obstacle.x = canvas.width - wallImg.width - img.width + 8;
-			}
-		}
-		obstacles.push(obstacle);
-*/
-
-
 var canvas = document.getElementById("game");
 
 var manifest = {
@@ -60,10 +41,14 @@ function setBest(b) {
 	document.cookie = cookie;
 }
 
+function echo(scene) {
+
+}
+
 function addObstacles(scene) {
 	var lastObstacle = obstacles[obstacles.length -1];
 	var nextObstacleX = scene.camera.x + scene.camera.width;
-	var gapHeight = 300;
+	var gapHeight = 250;
 	var minGapY = 200;
 	var maxGapY = canvas.height - minGapY;
 	var gapY = minGapY + (Math.random() * (maxGapY - minGapY - gapHeight));
@@ -90,7 +75,6 @@ var button = false;
 var jumping = false;
 var falling = true;
 var gravityon = true;
-var fading = false;
 var obstacles = [];
 
 function anythingWasPressed(){
@@ -128,7 +112,7 @@ function(elapsedMillis){
 	for (var i = 0; i < obstacles.length; i++) {
 		obstacles[i].move(elapsedMillis);
 	}
-		
+	
 	player.move(elapsedMillis);
 	
 	bgX -= this.camera.vx / 1.5 * elapsedMillis;
@@ -141,6 +125,7 @@ function(elapsedMillis){
 
 	//On button hit
 	if(button && !dead && !waitingToStart){
+		echo(this);
 		button = false;
 		gravity = false;
 		jumping = true;
@@ -179,10 +164,13 @@ function(elapsedMillis){
 	
 	//floor death
 	var bgH = game.images.get("bg").height;
-	if (player.y >= bgH - 90){
+	if (player.y >= bgH){
 		dead = true;
-		player.vy = 0;
-		player.vx = 0; //- this.camera.vx + .8;
+		falling = false;
+		//player.vy = 0;
+		player.vx = 0;
+		this.camera.vx = 0;
+		this.camera.vy = 0;
 	}
 	
 	//ceiling
@@ -226,9 +214,15 @@ function(elapsedMillis){
 		game.scenes.switchTo("title");
 	}*/
 
-	if (dead && !fading) {
-		this.startTimer("fade");
-		fading = true;
+	if (dead) {
+		var ftb = this.timer("fade to black");
+		if (ftb > 800) {
+			this.stopTimer("fade to black");
+			game.scenes.switchTo("title");
+		}
+		if (!ftb) {
+			this.startTimer("fade to black");
+		}
 	}
 },
 function(context){
@@ -250,18 +244,36 @@ function(context){
 	
 	//score
 	this.camera.drawAbsolute(context, function(){	
-		context.font = "50px sans-serif"
+		context.font = "100px consolas"
 		context.fillStyle = "#000000"
-		context.fillText(score,50,50);
+		context.fillText(score, 100, 100);
 	})
 	
-	//fade
-	if(fading){
-		/*this.camera.drawAbsolute(context, function(){
-		var bg = game.images.get("bg");
-		for (var x = bgX - bg.width; x <= canvas.width; x += bg.width){
-			context.drawImage(bg, x, 0 );
-		});*/
+	var ftb = this.timer("fade to black");
+	if (ftb > 0) {
+		var opacity = ftb / 300;
+		context.fillStyle = "rgba(0, 0, 0, " + opacity + ")";
+		context.fillRect(this.camera.x, this.camera.y, canvas.width, canvas.height);
+
+		this.camera.drawAbsolute(context, function() {
+			context.fillStyle = "#ffffff";
+			context.font = "50px pixelade";
+			context.fillText("SCORE", 0, 300);
+			context.font = "100px pixelade";
+			context.fillText(score, 0, 400);
+
+			context.font = "50px pixelade";
+			//if (newBest) {
+				//context.fillStyle = "#be4682";
+			//	context.fillText("NEW BEST!", 0, 600);
+			//} else {
+				context.fillText("BEST", 0, 600);
+			//}
+
+			context.font = "100px pixelade";
+			context.fillText(best, 0, 700);
+		});
+		return;
 	}
 }
 ));
