@@ -60,6 +60,25 @@ function setBest(b) {
 	document.cookie = cookie;
 }
 
+function addObstacles(scene) {
+	var lastObstacle = obstacles[obstacles.length -1];
+	var nextObstacleX = scene.camera.x + scene.camera.width;
+	var gapHeight = 300;
+	var minGapY = 200;
+	var maxGapY = canvas.height - minGapY;
+	var gapY = minGapY + (Math.random() * (maxGapY - minGapY - gapHeight));
+
+	if (lastObstacle) {
+		nextObstacleX = lastObstacle.x + 800;
+	} if (!lastObstacle || lastObstacle.x < scene.camera.x + scene.camera.width) {
+		var img = game.images.get("obstacle");
+		var obstacle = new Splat.AnimatedEntity(nextObstacleX , gapY - img.height, img.width, img.height, img, 0, 0);
+		obstacles.push(obstacle);
+		var obstacle = new Splat.AnimatedEntity(nextObstacleX , gapY + gapHeight, img.width, img.height, img, 0, 0);
+		obstacles.push(obstacle);	
+	}
+}
+
 var player;
 var bgX = 0;
 var bgH = 0;
@@ -71,6 +90,7 @@ var button = false;
 var jumping = false;
 var falling = true;
 var gravityon = true;
+var fading = false;
 var obstacles = [];
 
 function anythingWasPressed(){
@@ -81,6 +101,12 @@ game.scenes.add("title", new Splat.Scene(canvas, function(){
 	waitingtostart = true;
 	var playerImg = game.images.get("player");
 	player = new Splat.AnimatedEntity(50, canvas.height / 2, 40, 130, playerImg, -30, -13);
+	this.camera.x = 0;
+	dead = false;
+	waitingToStart = true;
+	obstacles = [];
+	score = 0;
+	fading = 0;
 },
 function(elapsedMillis){
 	//waiting for input
@@ -104,18 +130,13 @@ function(elapsedMillis){
 	}
 		
 	player.move(elapsedMillis);
-
-	//set player x pos to left camera side
-	/*if (!dead){
-		player.x = this.camera.x + 150;
-	}*/
 	
 	bgX -= this.camera.vx / 1.5 * elapsedMillis;
-	//var bgW = game.images.get("bg").width;
 	
 	//input
 	if (game.keyboard.consumePressed("space") || game.keyboard.consumePressed("up") || game.mouse.buttons[0]){
 		button = true;
+		game.mouse.buttons[0] = false;
 	}
 
 	//On button hit
@@ -134,8 +155,7 @@ function(elapsedMillis){
 
 	//if upwards flap, go up
 	if(jumping){
-	nojump = true;
-		//bounce: player.vy = 0- ((newjump ) * .007);
+		nojump = true;
 		//weird fast jump: player.vy = 0- ((200 - jumptime ) * .007);
 		//regular jump:
 		player.vy = -.9;
@@ -173,23 +193,15 @@ function(elapsedMillis){
 		this.startTimer("fall down");	//start time for downwards fall
 	}
 	
-/********************
- ********************
- ********************
- ********************/
-		img = game.images.get("obstacle");
-		obstacle = new Splat.AnimatedEntity(canvas.width , 0, img.width, img.height, img, 0, 0);
-		obstacles.push(obstacle);
-		
-		//while (obstacles.length > 0 && obstacles[0].y > this.camera.y + this.camera.height) {
-		//	obstacles.shift();
-		//}
-
+	//draw obstacles
+	if (!waitingToStart) {
+		addObstacles(this);
+	}
 	
 	//scoring
 	for (var i = 0; i < obstacles.length; i++) {
 		var obstacle = obstacles[i];
-		if (!obstacle.counted && obstacle.y > player.y + player.height) {
+		if (!obstacle.counted && obstacle.x + obstacle.width < player.x && obstacle.y > player.y) {
 			score++;
 			//game.sounds.play("point");
 			if (score > best) {
@@ -200,23 +212,6 @@ function(elapsedMillis){
 			console.log(score);
 		}
 		if (player.collides(obstacle)) {
-			/*if (!this.timer("flash")) {
-				var explode;
-				if (player.sprite.name.indexOf("left") > -1) {
-					explode = game.animations.get("player-explode-left");
-				} else {
-					explode = game.animations.get("player-explode-right");
-				}
-				explode.reset();
-				player.sprite = explode;
-
-				if (obstacle.sprite == game.animations.get("laser-left") || obstacle.sprite == game.animations.get("laser-right")) {
-					game.sounds.play("laser");
-				} else if (obstacle.sprite == game.images.get("spikes")) {
-					game.sounds.play("spikes");
-				}
-			}
-			this.startTimer("flash");*/
 			falling = true;
 			this.startTimer("fall time");
 			this.camera.vx = 0;
@@ -226,11 +221,18 @@ function(elapsedMillis){
 		}
 	}
 
-	
+	//restart
+	/*if (dead && button) {
+		game.scenes.switchTo("title");
+	}*/
+
+	if (dead && !fading) {
+		this.startTimer("fade");
+		fading = true;
+	}
 },
 function(context){
-	//context.drawImage(game.images.get("bg"),0,150);
-	//Draw background tiling
+	//background
 	this.camera.drawAbsolute(context, function(){
 		var bg = game.images.get("bg");
 		for (var x = bgX - bg.width; x <= canvas.width; x += bg.width){
@@ -238,25 +240,29 @@ function(context){
 		}
 	});
 	
-	//Draw obstacles
-	/*this.camera.drawAbsolute(context, function(){
-		var obstacle = game.images.get("obstacle");
-		var canvasH = canvas.height - obstacle.height;
-		for (var x = bgX; x <= canvas.width; x += 700)
-		{
-			var random = Math.random();
-			context.drawImage(obstacle, x, 0);
-			context.drawImage(obstacle, x, canvasH);
-		}
-	});*/
-	
+	//obstacles
 	for (var i = 0; i < obstacles.length; i++) {
 		obstacles[i].draw(context);
 	}
 	
+	//player
 	player.draw(context);
 	
+	//score
+	this.camera.drawAbsolute(context, function(){	
+		context.font = "50px sans-serif"
+		context.fillStyle = "#000000"
+		context.fillText(score,50,50);
+	})
 	
+	//fade
+	if(fading){
+		/*this.camera.drawAbsolute(context, function(){
+		var bg = game.images.get("bg");
+		for (var x = bgX - bg.width; x <= canvas.width; x += bg.width){
+			context.drawImage(bg, x, 0 );
+		});*/
+	}
 }
 ));
 
