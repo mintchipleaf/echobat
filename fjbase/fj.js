@@ -133,6 +133,14 @@ function(elapsedMillis){
 		this.startTimer("jump up"); //Start jump timer
 		this.stopTimer("fall down"); //stop falling
 		falltime = 0;
+		/*var echo = this.timer("echo");
+		if (ftb > 800) {
+			this.stopTimer("fade to black");
+			game.scenes.switchTo("title");
+		}
+		if (!ftb) {
+			this.startTimer("fade to black");
+		}*/
 	}
 	
 	//timer for upwards flap
@@ -245,7 +253,7 @@ function(context){
 	//score
 	this.camera.drawAbsolute(context, function(){	
 		context.font = "100px consolas"
-		context.fillStyle = "#000000"
+		context.fillStyle = "#FFFFFF"
 		context.fillText(score, 100, 100);
 	})
 	
