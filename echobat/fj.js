@@ -7,12 +7,11 @@ var manifest = {
 			"obstacle": "images/obstacle.png"
 		},
 		"sounds": {
-			"echo": "sounds/echo.wav",
-			"point": "sounds/point.wav"
+			//"echo": "sounds/echo.wav"
+			
 		},
 		"fonts": [],
 		"animations": {
-			
 		}
 };
 
@@ -43,13 +42,20 @@ function setBest(b) {
 }
 
 function echo(scene) {
-
+	var echo = scene.timer("echo");
+	if (echo > 400) {
+		scene.stopTimer("echo");
+		echoing = false;
+	}
+	if (!echo) {
+		scene.startTimer("echo");
+	}
 }
 
 function addObstacles(scene) {
 	var lastObstacle = obstacles[obstacles.length -1];
 	var nextObstacleX = scene.camera.x + scene.camera.width;
-	var gapHeight = 275;
+	var gapHeight = 280;
 	var minGapY = 200;
 	var maxGapY = canvas.height - minGapY;
 	var gapY = minGapY + (Math.random() * (maxGapY - minGapY - gapHeight));
@@ -76,12 +82,14 @@ var button = false;
 var jumping = false;
 var falling = true;
 var gravityon = true;
+var echoing = false;
+var newBest = false;
 var obstacles = [];
 
 function anythingWasPressed(){
 	return game.keyboard.isPressed("space") || game.keyboard.isPressed("up") || game.mouse.buttons[0];
 }
-
+/****************************************************************/
 game.scenes.add("title", new Splat.Scene(canvas, function(){
 	waitingtostart = true;
 	var playerImg = game.images.get("player");
@@ -92,11 +100,13 @@ game.scenes.add("title", new Splat.Scene(canvas, function(){
 	obstacles = [];
 	score = 0;
 	fading = 0;
+	newBest = false;
 },
+/****************************************************************/
 function(elapsedMillis){
 	//waiting for input
 	if (waitingToStart) {
-		this.camera.vx = .8;
+		this.camera.vx = .6;
 		falling = false;
 		player.y = 400;
 		player.vx = this.camera.vx;
@@ -125,9 +135,7 @@ function(elapsedMillis){
 	}
 
 	//On button hit
-	if(button && !dead && !waitingToStart){
-		echo(this);
-		game.sounds.play("echo");
+	if(button && !dead && !waitingToStart) {
 		button = false;
 		gravity = false;
 		jumping = true;
@@ -135,6 +143,8 @@ function(elapsedMillis){
 		this.startTimer("jump up"); //Start jump timer
 		this.stopTimer("fall down"); //stop falling
 		falltime = 0;
+		echoing = true;
+		this.startTimer("echo");
 	}
 	
 	//timer for upwards flap
@@ -150,7 +160,7 @@ function(elapsedMillis){
 	
 	//if flap done
 	if (jumptime > 150) {
-	button = false;
+	    button = false;
 		this.stopTimer("jump up");
 			jumptime = 0;				//reset timer	
 			jumping = false;			//not jumping
@@ -161,7 +171,7 @@ function(elapsedMillis){
 	//gravity
 	var falltime = this.timer("fall down");
 	if (falling) {
-		player.vy = (falltime) / 600;
+		player.vy = falltime / 600;
 	}
 	
 	//floor death
@@ -188,15 +198,20 @@ function(elapsedMillis){
 		addObstacles(this);
 	}
 	
+	//echo
+	if (echoing) {
+		echo(this);
+	}
+	
 	//scoring
 	for (var i = 0; i < obstacles.length; i++) {
 		var obstacle = obstacles[i];
 		if (!obstacle.counted && obstacle.x + obstacle.width < player.x && obstacle.y > player.y && !dead) {
 			score++;
-			game.sounds.play("point");
+			//game.sounds.play("point");
 			if (score > best) {
 				setBest(score);
-				//newBest = true;
+				newBest = true;
 			}
 			obstacle.counted = true;
 			console.log(score);
@@ -211,11 +226,7 @@ function(elapsedMillis){
 		}
 	}
 
-	//restart
-	/*if (dead && button) {
-		game.scenes.switchTo("title");
-	}*/
-
+	//death
 	if (dead) {
 		var ftb = this.timer("fade to black");
 		if (ftb > 800) {
@@ -227,6 +238,7 @@ function(elapsedMillis){
 		}
 	}
 },
+/****************************************************************/
 function(context){
 	//background
 	this.camera.drawAbsolute(context, function(){
@@ -236,9 +248,23 @@ function(context){
 		}
 	});
 	
+	//echo
+	var echo = this.timer("echo");
+	var opacity = 0;
+	/*if (echo > 0) {
+		opacity = 1 / (echo / 600);
+		//console.log(opacity);
+	}*/
+	if (echo > 0) {
+		opacity = (50 / echo);
+		console.log(opacity);
+	}
+	
 	//obstacles
 	for (var i = 0; i < obstacles.length; i++) {
-		obstacles[i].draw(context);
+		var obstacle = obstacles[i];
+			context.fillStyle = "rgba(0, 150, 0, " + opacity + ")"
+			context.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
 	}
 	
 	//player
@@ -251,6 +277,7 @@ function(context){
 		context.fillText(score, 100, 100);
 	})
 	
+	//score fade screen
 	var ftb = this.timer("fade to black");
 	if (ftb > 0) {
 		var opacity = ftb / 300;
@@ -265,12 +292,12 @@ function(context){
 			context.fillText(score, 0, 400);
 
 			context.font = "50px pixelade";
-			//if (newBest) {
-				//context.fillStyle = "#be4682";
-			//	context.fillText("NEW BEST!", 0, 600);
-			//} else {
+			if (newBest) {
+				context.fillStyle = "rgba(0, 150, 0, 1)";
+				context.fillText("NEW BEST!", 0, 600);
+			} else {
 				context.fillText("BEST", 0, 600);
-			//}
+			}
 
 			context.font = "100px pixelade";
 			context.fillText(best, 0, 700);
