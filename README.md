@@ -1,4 +1,4 @@
-flappyjam
+Echo Bat
 =========
 
-Games for Flappy Jam
+Game made for Flappy Jam
